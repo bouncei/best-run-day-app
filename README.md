@@ -1,32 +1,33 @@
 # Best Run Day App 🏃‍♂️
 
-A beautiful Android app that helps runners find the best days to run by providing weather forecasts with running-specific scores.
+A beautiful Android app that helps runners find the best days to run by providing weather forecasts with running-specific percentage scores.
 
 ## Features
 
 - **Current Weather Display**: Shows current temperature, conditions, wind speed, humidity, and UV index
 - **7-Day Forecast**: Detailed weather forecast for the next 7 days
-- **Running Score**: Each day gets a score from 1-10 based on ideal running conditions
+- **Running Score**: Each day gets a percentage score from 0-100% based on ideal running conditions
 - **Beautiful UI**: Modern Material Design 3 interface with gradient backgrounds and smooth animations
 - **Auto Location**: Uses IP-based location detection (can be customized)
 - **Refresh Function**: Pull to refresh or tap the refresh button to get updated weather data
 
 ## Running Score Algorithm
 
-The app calculates a running score (1-10) for each day based on:
+The app calculates a running score (0-100%) for each day based on weighted factors:
 
-- **Temperature**: Ideal range 15-22°C (59-72°F)
-- **Rain Chance**: Lower chance of rain = higher score
-- **Wind Speed**: Ideal under 15 km/h (9 mph)
-- **Humidity**: Optimal range 40-60%
-- **UV Index**: Considers high UV exposure
+- **Temperature (30% weight)**: Ideal range 15-22°C (59-72°F)
+- **Rain Chance (25% weight)**: Lower chance of rain = higher score
+- **Wind Speed (20% weight)**: Ideal under 15 km/h (9 mph)
+- **Humidity (15% weight)**: Optimal range 40-60%
+- **UV Index (10% weight)**: Moderate UV levels preferred
 
 **Score Legend:**
 
-- 🟢 8-10: Perfect running conditions
-- 🟠 6-7: Good running conditions
-- 🔴 4-5: Fair running conditions
-- ⚫ 1-3: Poor running conditions
+- 🟢 80-100%: Excellent running conditions
+- 🌟 60-79%: Very good running conditions
+- 🟠 40-59%: Good running conditions
+- 🔴 20-39%: Fair running conditions
+- ⚫ 0-19%: Poor running conditions
 
 ## Setup Instructions
 
@@ -118,7 +119,13 @@ The app uses Celsius by default. To switch to Fahrenheit, modify the data mappin
 
 ### Running Score Parameters
 
-Adjust the scoring algorithm in `WeatherRepository.calculateRunningScore()` to match your running preferences.
+Adjust the scoring algorithm in `WeatherRepository.calculateRunningScore()` to match your running preferences. The current weights are:
+
+- Temperature: 30%
+- Rain Chance: 25%
+- Wind Speed: 20%
+- Humidity: 15%
+- UV Index: 10%
 
 ## Error Handling
 
@@ -137,6 +144,7 @@ The app includes comprehensive error handling:
 - 🏃‍♀️ Personal running preferences
 - 📱 Weather notifications
 - 🗺️ Multiple location support
+- 📈 Running score trends
 
 ## Contributing
 
