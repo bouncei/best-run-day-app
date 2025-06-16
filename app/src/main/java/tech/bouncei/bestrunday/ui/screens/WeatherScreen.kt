@@ -692,110 +692,367 @@ fun EnhancedWeatherInfoItem(
 @Composable
 fun EnhancedDailyForecastCard(forecast: DailyForecastUI, onScoreClick: () -> Unit) {
         var isExpanded by remember { mutableStateOf(false) }
+        val hapticFeedback = LocalHapticFeedback.current
+
+        // Animation states
+        val cardElevation by
+                animateFloatAsState(
+                        targetValue = if (isExpanded) 12f else 6f,
+                        animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy),
+                        label = "card_elevation"
+                )
+
+        val cardScale by
+                animateFloatAsState(
+                        targetValue = if (isExpanded) 1.02f else 1f,
+                        animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy),
+                        label = "card_scale"
+                )
+
+        // Score-based gradient colors
+        val scoreGradientColors =
+                when {
+                        forecast.runningScore >= 80 -> listOf(Color(0xFF4CAF50), Color(0xFF66BB6A))
+                        forecast.runningScore >= 60 -> listOf(Color(0xFF8BC34A), Color(0xFF9CCC65))
+                        forecast.runningScore >= 40 -> listOf(Color(0xFFFF9800), Color(0xFFFFB74D))
+                        forecast.runningScore >= 20 -> listOf(Color(0xFFFF5722), Color(0xFFFF7043))
+                        else -> listOf(Color(0xFFf44336), Color(0xFFEF5350))
+                }
 
         Card(
-                modifier = Modifier.fillMaxWidth().clickable { isExpanded = !isExpanded },
-                elevation = CardDefaults.cardElevation(defaultElevation = 6.dp),
-                shape = RoundedCornerShape(16.dp)
-        ) {
-                Column(modifier = Modifier.padding(20.dp)) {
-                        Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
-                        ) {
-                                // Day and condition
-                                Column(modifier = Modifier.weight(2f)) {
-                                        Text(
-                                                forecast.dayOfWeek,
-                                                style = MaterialTheme.typography.titleLarge,
-                                                fontWeight = FontWeight.Bold,
-                                                color = MaterialTheme.colorScheme.onSurface
-                                        )
-                                        Row(
-                                                verticalAlignment = Alignment.CenterVertically,
-                                                horizontalArrangement = Arrangement.spacedBy(8.dp)
-                                        ) {
-                                                WeatherIcon(
-                                                        condition = forecast.condition,
-                                                        size = 20
-                                                )
-                                                Text(
-                                                        forecast.condition,
-                                                        style = MaterialTheme.typography.bodyLarge,
-                                                        color =
-                                                                MaterialTheme.colorScheme.onSurface
-                                                                        .copy(alpha = 0.7f)
-                                                )
-                                        }
-                                }
-
-                                // Temperature
-                                Column(
-                                        horizontalAlignment = Alignment.End,
-                                        modifier = Modifier.weight(1f)
-                                ) {
-                                        Row(
-                                                verticalAlignment = Alignment.CenterVertically,
-                                                horizontalArrangement = Arrangement.spacedBy(4.dp)
-                                        ) {
-                                                Text(
-                                                        forecast.highTemp.replace("°C", ""),
-                                                        style =
-                                                                MaterialTheme.typography
-                                                                        .headlineMedium,
-                                                        fontWeight = FontWeight.Bold,
-                                                        color = MaterialTheme.colorScheme.onSurface
-                                                )
-                                                Text(
-                                                        "°",
-                                                        style =
-                                                                MaterialTheme.typography
-                                                                        .titleMedium,
-                                                        color =
-                                                                MaterialTheme.colorScheme.onSurface
-                                                                        .copy(alpha = 0.6f)
-                                                )
-                                        }
-                                        Text(
-                                                forecast.lowTemp,
-                                                style = MaterialTheme.typography.bodyLarge,
-                                                color =
-                                                        MaterialTheme.colorScheme.onSurface.copy(
-                                                                alpha = 0.6f
-                                                        )
-                                        )
-                                }
-
-                                // Running score
-                                AnimatedRunningScore(
-                                        score = forecast.runningScore,
-                                        onScoreClick = onScoreClick
+                modifier =
+                        Modifier.fillMaxWidth().scale(cardScale).clickable {
+                                isExpanded = !isExpanded
+                                hapticFeedback.performHapticFeedback(
+                                        androidx.compose.ui.hapticfeedback.HapticFeedbackType
+                                                .TextHandleMove
                                 )
-                        }
+                        },
+                elevation = CardDefaults.cardElevation(defaultElevation = cardElevation.dp),
+                shape = RoundedCornerShape(20.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+        ) {
+                Column {
+                        // Main card content with gradient accent
+                        Box {
+                                // Subtle gradient accent bar
+                                Box(
+                                        modifier =
+                                                Modifier.fillMaxWidth()
+                                                        .height(4.dp)
+                                                        .background(
+                                                                brush =
+                                                                        Brush.horizontalGradient(
+                                                                                scoreGradientColors
+                                                                        )
+                                                        )
+                                )
 
-                        // Expandable details
-                        AnimatedVisibility(
-                                visible = isExpanded,
-                                enter = slideInVertically() + fadeIn(),
-                                exit = slideOutVertically() + fadeOut()
-                        ) {
-                                Column(modifier = Modifier.padding(top = 16.dp)) {
-                                        Divider(
-                                                color =
-                                                        MaterialTheme.colorScheme.onSurface.copy(
-                                                                alpha = 0.12f
-                                                        ),
-                                                modifier = Modifier.padding(bottom = 16.dp)
-                                        )
-
+                                Column(modifier = Modifier.padding(24.dp)) {
                                         Row(
                                                 modifier = Modifier.fillMaxWidth(),
-                                                horizontalArrangement = Arrangement.SpaceEvenly
+                                                horizontalArrangement = Arrangement.SpaceBetween,
+                                                verticalAlignment = Alignment.CenterVertically
                                         ) {
-                                                DetailItem("☔", "Rain", forecast.chanceOfRain)
-                                                DetailItem("💨", "Wind", forecast.windSpeed)
-                                                DetailItem("📅", "Date", forecast.date)
+                                                // Day and condition section
+                                                Column(modifier = Modifier.weight(2.5f)) {
+                                                        Row(
+                                                                verticalAlignment =
+                                                                        Alignment.CenterVertically,
+                                                                horizontalArrangement =
+                                                                        Arrangement.spacedBy(8.dp)
+                                                        ) {
+                                                                Text(
+                                                                        forecast.dayOfWeek,
+                                                                        style =
+                                                                                MaterialTheme
+                                                                                        .typography
+                                                                                        .headlineSmall,
+                                                                        fontWeight =
+                                                                                FontWeight.Bold,
+                                                                        color =
+                                                                                MaterialTheme
+                                                                                        .colorScheme
+                                                                                        .onSurface
+                                                                )
+
+                                                                // Best day indicator
+                                                                if (forecast.runningScore >= 80) {
+                                                                        Surface(
+                                                                                shape =
+                                                                                        RoundedCornerShape(
+                                                                                                12.dp
+                                                                                        ),
+                                                                                color =
+                                                                                        Color(
+                                                                                                        0xFF4CAF50
+                                                                                                )
+                                                                                                .copy(
+                                                                                                        alpha =
+                                                                                                                0.15f
+                                                                                                )
+                                                                        ) {
+                                                                                Text(
+                                                                                        "BEST",
+                                                                                        modifier =
+                                                                                                Modifier.padding(
+                                                                                                        horizontal =
+                                                                                                                8.dp,
+                                                                                                        vertical =
+                                                                                                                4.dp
+                                                                                                ),
+                                                                                        style =
+                                                                                                MaterialTheme
+                                                                                                        .typography
+                                                                                                        .labelSmall,
+                                                                                        fontWeight =
+                                                                                                FontWeight
+                                                                                                        .Bold,
+                                                                                        color =
+                                                                                                Color(
+                                                                                                        0xFF4CAF50
+                                                                                                )
+                                                                                )
+                                                                        }
+                                                                }
+                                                        }
+
+                                                        Spacer(modifier = Modifier.height(8.dp))
+
+                                                        Row(
+                                                                verticalAlignment =
+                                                                        Alignment.CenterVertically,
+                                                                horizontalArrangement =
+                                                                        Arrangement.spacedBy(12.dp)
+                                                        ) {
+                                                                // Enhanced weather icon with
+                                                                // background
+                                                                Surface(
+                                                                        shape = CircleShape,
+                                                                        color =
+                                                                                MaterialTheme
+                                                                                        .colorScheme
+                                                                                        .primaryContainer
+                                                                                        .copy(
+                                                                                                alpha =
+                                                                                                        0.3f
+                                                                                        ),
+                                                                        modifier =
+                                                                                Modifier.size(48.dp)
+                                                                ) {
+                                                                        Box(
+                                                                                contentAlignment =
+                                                                                        Alignment
+                                                                                                .Center,
+                                                                                modifier =
+                                                                                        Modifier.fillMaxSize()
+                                                                        ) {
+                                                                                WeatherIcon(
+                                                                                        condition =
+                                                                                                forecast.condition,
+                                                                                        size = 24
+                                                                                )
+                                                                        }
+                                                                }
+
+                                                                Column {
+                                                                        Text(
+                                                                                forecast.condition,
+                                                                                style =
+                                                                                        MaterialTheme
+                                                                                                .typography
+                                                                                                .bodyLarge,
+                                                                                fontWeight =
+                                                                                        FontWeight
+                                                                                                .Medium,
+                                                                                color =
+                                                                                        MaterialTheme
+                                                                                                .colorScheme
+                                                                                                .onSurface
+                                                                        )
+
+                                                                        // Quick weather stats
+                                                                        Row(
+                                                                                horizontalArrangement =
+                                                                                        Arrangement
+                                                                                                .spacedBy(
+                                                                                                        16.dp
+                                                                                                )
+                                                                        ) {
+                                                                                WeatherStat(
+                                                                                        "💧",
+                                                                                        forecast.chanceOfRain
+                                                                                )
+                                                                                WeatherStat(
+                                                                                        "💨",
+                                                                                        forecast.windSpeed
+                                                                                )
+                                                                        }
+                                                                }
+                                                        }
+                                                }
+
+                                                // Temperature section with better design
+                                                Column(
+                                                        horizontalAlignment = Alignment.End,
+                                                        modifier = Modifier.weight(1f)
+                                                ) {
+                                                        Row(
+                                                                verticalAlignment = Alignment.Top,
+                                                                horizontalArrangement =
+                                                                        Arrangement.spacedBy(2.dp)
+                                                        ) {
+                                                                Text(
+                                                                        forecast.highTemp.replace(
+                                                                                "°C",
+                                                                                ""
+                                                                        ),
+                                                                        style =
+                                                                                MaterialTheme
+                                                                                        .typography
+                                                                                        .displaySmall,
+                                                                        fontWeight =
+                                                                                FontWeight.Bold,
+                                                                        color =
+                                                                                MaterialTheme
+                                                                                        .colorScheme
+                                                                                        .onSurface,
+                                                                        fontSize = 32.sp
+                                                                )
+                                                                Text(
+                                                                        "°",
+                                                                        style =
+                                                                                MaterialTheme
+                                                                                        .typography
+                                                                                        .headlineSmall,
+                                                                        color =
+                                                                                MaterialTheme
+                                                                                        .colorScheme
+                                                                                        .onSurface
+                                                                                        .copy(
+                                                                                                alpha =
+                                                                                                        0.6f
+                                                                                        ),
+                                                                        modifier =
+                                                                                Modifier.padding(
+                                                                                        top = 4.dp
+                                                                                )
+                                                                )
+                                                        }
+
+                                                        Text(
+                                                                forecast.lowTemp,
+                                                                style =
+                                                                        MaterialTheme.typography
+                                                                                .bodyLarge,
+                                                                color =
+                                                                        MaterialTheme.colorScheme
+                                                                                .onSurface.copy(
+                                                                                alpha = 0.7f
+                                                                        ),
+                                                                fontWeight = FontWeight.Medium
+                                                        )
+                                                }
+
+                                                Spacer(modifier = Modifier.width(16.dp))
+
+                                                // Enhanced running score
+                                                EnhancedRunningScoreBadge(
+                                                        score = forecast.runningScore,
+                                                        onScoreClick = onScoreClick
+                                                )
+                                        }
+
+                                        // Expandable details with enhanced design
+                                        AnimatedVisibility(
+                                                visible = isExpanded,
+                                                enter =
+                                                        slideInVertically(
+                                                                initialOffsetY = { -it / 2 },
+                                                                animationSpec =
+                                                                        spring(
+                                                                                dampingRatio =
+                                                                                        Spring.DampingRatioMediumBouncy
+                                                                        )
+                                                        ) + fadeIn(),
+                                                exit =
+                                                        slideOutVertically(
+                                                                targetOffsetY = { -it / 2 },
+                                                                animationSpec =
+                                                                        spring(
+                                                                                dampingRatio =
+                                                                                        Spring.DampingRatioMediumBouncy
+                                                                        )
+                                                        ) + fadeOut()
+                                        ) {
+                                                Column(modifier = Modifier.padding(top = 20.dp)) {
+                                                        // Elegant divider
+                                                        Box(
+                                                                modifier =
+                                                                        Modifier.fillMaxWidth()
+                                                                                .height(1.dp)
+                                                                                .background(
+                                                                                        brush =
+                                                                                                Brush.horizontalGradient(
+                                                                                                        colors =
+                                                                                                                listOf(
+                                                                                                                        Color.Transparent,
+                                                                                                                        MaterialTheme
+                                                                                                                                .colorScheme
+                                                                                                                                .onSurface
+                                                                                                                                .copy(
+                                                                                                                                        alpha =
+                                                                                                                                                0.2f
+                                                                                                                                ),
+                                                                                                                        Color.Transparent
+                                                                                                                )
+                                                                                                )
+                                                                                )
+                                                        )
+
+                                                        Spacer(modifier = Modifier.height(20.dp))
+
+                                                        // Enhanced detail cards
+                                                        Row(
+                                                                modifier = Modifier.fillMaxWidth(),
+                                                                horizontalArrangement =
+                                                                        Arrangement.spacedBy(12.dp)
+                                                        ) {
+                                                                EnhancedDetailCard(
+                                                                        icon = "📅",
+                                                                        label = "Date",
+                                                                        value = forecast.date,
+                                                                        modifier =
+                                                                                Modifier.weight(1f)
+                                                                )
+                                                                EnhancedDetailCard(
+                                                                        icon = "🌡️",
+                                                                        label = "Feels Like",
+                                                                        value =
+                                                                                "${forecast.highTemp.replace("°C", "")}°",
+                                                                        modifier =
+                                                                                Modifier.weight(1f)
+                                                                )
+                                                                EnhancedDetailCard(
+                                                                        icon = "🎯",
+                                                                        label = "Score",
+                                                                        value =
+                                                                                "${forecast.runningScore}%",
+                                                                        modifier =
+                                                                                Modifier.weight(1f),
+                                                                        valueColor =
+                                                                                scoreGradientColors
+                                                                                        .first()
+                                                                )
+                                                        }
+
+                                                        Spacer(modifier = Modifier.height(16.dp))
+
+                                                        // Running recommendation
+                                                        RunningRecommendationCard(
+                                                                forecast.runningScore
+                                                        )
+                                                }
                                         }
                                 }
                         }
@@ -804,7 +1061,23 @@ fun EnhancedDailyForecastCard(forecast: DailyForecastUI, onScoreClick: () -> Uni
 }
 
 @Composable
-fun AnimatedRunningScore(
+fun WeatherStat(icon: String, value: String) {
+        Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
+                Text(icon, fontSize = 12.sp)
+                Text(
+                        value,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
+                        fontWeight = FontWeight.Medium
+                )
+        }
+}
+
+@Composable
+fun EnhancedRunningScoreBadge(
         score: Int,
         modifier: Modifier = Modifier,
         onScoreClick: (() -> Unit)? = null
@@ -844,63 +1117,152 @@ fun AnimatedRunningScore(
                         label = "color_animation"
                 )
 
-        Box(
-                modifier =
-                        modifier.size(58.dp)
-                                .scale(scale)
-                                .clip(CircleShape)
-                                .background(
-                                        brush =
-                                                Brush.radialGradient(
-                                                        colors =
-                                                                listOf(
-                                                                        backgroundColorAnimated,
-                                                                        backgroundColorAnimated
-                                                                                .copy(alpha = 0.8f)
-                                                                )
-                                                )
-                                )
-                                .clickable {
+        // Enhanced badge with glow effect
+        Box(modifier = modifier.size(72.dp).scale(scale), contentAlignment = Alignment.Center) {
+                // Glow effect background
+                Box(
+                        modifier =
+                                Modifier.size(68.dp)
+                                        .clip(CircleShape)
+                                        .background(
+                                                brush =
+                                                        Brush.radialGradient(
+                                                                colors =
+                                                                        listOf(
+                                                                                backgroundColorAnimated
+                                                                                        .copy(
+                                                                                                alpha =
+                                                                                                        0.3f
+                                                                                        ),
+                                                                                Color.Transparent
+                                                                        ),
+                                                                radius = 100f
+                                                        )
+                                        )
+                )
+
+                // Main badge
+                Surface(
+                        modifier =
+                                Modifier.size(64.dp).clickable {
                                         onScoreClick?.invoke()
                                         hapticFeedback.performHapticFeedback(
                                                 androidx.compose.ui.hapticfeedback
                                                         .HapticFeedbackType.LongPress
                                         )
                                 },
-                contentAlignment = Alignment.Center
+                        shape = CircleShape,
+                        color = backgroundColorAnimated,
+                        shadowElevation = 8.dp
+                ) {
+                        Box(
+                                contentAlignment = Alignment.Center,
+                                modifier = Modifier.fillMaxSize()
+                        ) {
+                                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                        Text(
+                                                text = "$animatedScore",
+                                                style = MaterialTheme.typography.headlineSmall,
+                                                color = Color.White,
+                                                fontWeight = FontWeight.Bold,
+                                                fontSize = 20.sp
+                                        )
+                                        Text(
+                                                text = "%",
+                                                style = MaterialTheme.typography.bodySmall,
+                                                color = Color.White.copy(alpha = 0.9f),
+                                                fontSize = 12.sp,
+                                                fontWeight = FontWeight.Medium
+                                        )
+                                }
+                        }
+                }
+        }
+}
+
+@Composable
+fun EnhancedDetailCard(
+        icon: String,
+        label: String,
+        value: String,
+        modifier: Modifier = Modifier,
+        valueColor: Color = MaterialTheme.colorScheme.onSurface
+) {
+        Surface(
+                modifier = modifier,
+                shape = RoundedCornerShape(12.dp),
+                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
         ) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        modifier = Modifier.padding(16.dp)
+                ) {
+                        Text(icon, fontSize = 24.sp)
+                        Spacer(modifier = Modifier.height(8.dp))
                         Text(
-                                text = "$animatedScore",
-                                style = MaterialTheme.typography.titleMedium,
-                                color = Color.White,
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 16.sp
-                        )
-                        Text(
-                                text = "%",
+                                label,
                                 style = MaterialTheme.typography.bodySmall,
-                                color = Color.White.copy(alpha = 0.9f),
-                                fontSize = 10.sp
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
+                                fontWeight = FontWeight.Medium
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                                value,
+                                style = MaterialTheme.typography.bodyLarge,
+                                fontWeight = FontWeight.Bold,
+                                color = valueColor
                         )
                 }
         }
 }
 
 @Composable
-fun DetailItem(icon: String, label: String, value: String) {
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Text(icon, fontSize = 20.sp)
-                Text(
-                        label,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
-                )
-                Text(
-                        value,
-                        style = MaterialTheme.typography.bodyMedium,
-                        fontWeight = FontWeight.Medium,
-                        color = MaterialTheme.colorScheme.onSurface
-                )
+fun RunningRecommendationCard(score: Int) {
+        val (recommendation, emoji, color) =
+                when {
+                        score >= 80 ->
+                                Triple(
+                                        "Perfect running weather! Get out there! 🎯",
+                                        "🌟",
+                                        Color(0xFF4CAF50)
+                                )
+                        score >= 60 ->
+                                Triple("Great conditions for a run!", "👍", Color(0xFF8BC34A))
+                        score >= 40 ->
+                                Triple("Good enough for a moderate run", "👌", Color(0xFFFF9800))
+                        score >= 20 ->
+                                Triple("Consider indoor alternatives", "🤔", Color(0xFFFF5722))
+                        else -> Triple("Better to skip today", "❌", Color(0xFFf44336))
+                }
+
+        Surface(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(12.dp),
+                color = color.copy(alpha = 0.1f)
+        ) {
+                Row(
+                        modifier = Modifier.padding(16.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                        Text(emoji, fontSize = 24.sp)
+                        Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                        "Running Recommendation",
+                                        style = MaterialTheme.typography.labelMedium,
+                                        color = color,
+                                        fontWeight = FontWeight.Bold
+                                )
+                                Text(
+                                        recommendation,
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color =
+                                                MaterialTheme.colorScheme.onSurface.copy(
+                                                        alpha = 0.8f
+                                                ),
+                                        fontWeight = FontWeight.Medium
+                                )
+                        }
+                }
         }
 }
